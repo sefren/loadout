@@ -1,4 +1,7 @@
 #include "ProcessWatcher.h"
+
+#include "EventBus.h"
+#include "Events.h"
 #include "Logger.h"
 
 namespace loadout {
@@ -13,9 +16,8 @@ namespace loadout {
         , watcher_thread_(std::move(other.watcher_thread_))
         , process_name_(std::move(other.process_name_))
     {
-        other.current_state_ = PROCESS_STATE::PROCESS_NOT_RUNNING;
+        other.current_state_ = PROCESS_STATE::STOPPED;
         other.should_watch_ = false;
-        LO_DEBUG("ProcessWatcher moved");
     }
 
     ProcessWatcher& ProcessWatcher::operator=(ProcessWatcher&& other) noexcept
@@ -27,9 +29,8 @@ namespace loadout {
             should_watch_ = other.should_watch_.load();
             watcher_thread_ = std::move(other.watcher_thread_);
             process_name_ = std::move(other.process_name_);
-            other.current_state_ = PROCESS_STATE::PROCESS_NOT_RUNNING;
+            other.current_state_ = PROCESS_STATE::STOPPED;
             other.should_watch_ = false;
-            LO_DEBUG("ProcessWatcher move assigned");
         }
         return *this;
     }
@@ -52,7 +53,7 @@ namespace loadout {
 
         if (IsProcessRunning())
         {
-            current_state_ = PROCESS_STATE::PROCESS_ALREADY_RUNNING;
+            current_state_ = PROCESS_STATE::RUNNING;
             LO_INFO("Process " + process_name_ + " was already running when monitoring started");
         }
 
@@ -72,20 +73,22 @@ namespace loadout {
         {
             watcher_thread_->join();
             watcher_thread_.reset();
-            LO_DEBUG("Watcher thread stopped and cleaned up");
         }
     }
 
     void ProcessWatcher::SetProcessName(const std::string& processName)
     {
         process_name_ = processName;
-        LO_DEBUG("Process name set to: " + processName);
     }
 
     void ProcessWatcher::WatcherThread()
     {
-        LO_DEBUG("Watcher thread started");
-        bool wasRunning = (current_state_.load() == PROCESS_STATE::PROCESS_ALREADY_RUNNING);
+        bool wasRunning = (current_state_.load() == PROCESS_STATE::RUNNING);
+
+        // Publish initial state if already running
+        if (wasRunning) {
+            PublishProcessEvent(PROCESS_STATE::RUNNING);
+        }
 
         while (should_watch_.load())
         {
@@ -93,28 +96,44 @@ namespace loadout {
 
             if (isRunning && !wasRunning)
             {
-                current_state_ = PROCESS_STATE::PROCESS_RUNNING;
+                current_state_ = PROCESS_STATE::STARTED;
                 wasRunning = true;
                 LO_INFO("Process started: " + process_name_);
+                PublishProcessEvent(PROCESS_STATE::STARTED);
             }
             else if (!isRunning && wasRunning)
             {
-                current_state_ = PROCESS_STATE::PROCESS_NOT_RUNNING;
+                current_state_ = PROCESS_STATE::STOPPED;
                 wasRunning = false;
                 LO_INFO("Process stopped: " + process_name_);
+                PublishProcessEvent(PROCESS_STATE::STOPPED);
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
+    }
 
-        LO_DEBUG("Watcher thread ending");
+    void ProcessWatcher::PublishProcessEvent(PROCESS_STATE state)
+    {
+        auto event = std::make_shared<ProcessEvent>(state, process_name_);
+
+        switch (state) {
+            case PROCESS_STATE::STARTED:
+                EventBus::Instance().Publish("process_started", event);
+                break;
+            case PROCESS_STATE::STOPPED:
+                EventBus::Instance().Publish("process_stopped", event);
+                break;
+            case PROCESS_STATE::RUNNING:
+                EventBus::Instance().Publish("process_already_running", event);
+                break;
+        }
     }
 
     bool ProcessWatcher::IsProcessRunning() const
     {
         if (process_name_.empty())
         {
-            LO_DEBUG("Process name is empty - returning false");
             return false;
         }
 
@@ -125,11 +144,10 @@ namespace loadout {
             return false;
         }
 
-        // Simple RAII for handle cleanup
         struct HandleGuard
         {
             HANDLE h;
-            HandleGuard(HANDLE handle) : h(handle) {}
+            explicit HandleGuard(HANDLE handle) : h(handle) {}
             ~HandleGuard() { if (h != INVALID_HANDLE_VALUE) CloseHandle(h); }
         } guard(hSnap);
 

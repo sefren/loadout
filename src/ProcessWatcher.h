@@ -11,9 +11,9 @@
 namespace loadout
 {
     enum class PROCESS_STATE {
-        PROCESS_NOT_RUNNING,
-        PROCESS_RUNNING,
-        PROCESS_ALREADY_RUNNING
+        STOPPED,
+        STARTED,
+        RUNNING,
     };
 
     class ProcessWatcher
@@ -39,8 +39,9 @@ namespace loadout
     private:
         bool IsProcessRunning() const;
         void WatcherThread();
+        void PublishProcessEvent(PROCESS_STATE state);
 
-        std::atomic<PROCESS_STATE> current_state_{ PROCESS_STATE::PROCESS_NOT_RUNNING };
+        std::atomic<PROCESS_STATE> current_state_{ PROCESS_STATE::STOPPED };
         std::atomic<bool> should_watch_{ false };
         std::unique_ptr<std::thread> watcher_thread_;
         std::string process_name_;

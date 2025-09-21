@@ -10,6 +10,7 @@ add_executable(loadout
     src/ProcessWatcher.cpp
     src/Logger.h
     src/ProcessWatcher.h
+        src/Events.h
 )
 
 # Set output directory to bin subdirectory
