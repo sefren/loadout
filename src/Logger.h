@@ -38,21 +38,21 @@ private:
     Logger() = default;
     ~Logger() { if (ofs_.is_open()) ofs_.close(); }
 
-    std::string Prefix(LogLevel lvl) {
+    static std::string Prefix(const LogLevel lvl) {
         switch (lvl) {
         case LogLevel::Debug: return "LO:DEBUG";
         case LogLevel::Info:  return "LO:INFO ";
         case LogLevel::Warn:  return "LO:WARN ";
         case LogLevel::Error: return "LO:ERROR";
         }
-        return "LO:UNKWN";
+        return "LO:UNKNOWN";
     }
 
-    std::string TimeNow() {
+    static std::string TimeNow() {
         using namespace std::chrono;
-        auto now = system_clock::now();
-        auto tt = system_clock::to_time_t(now);
-        auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+        const auto now = system_clock::now();
+        const auto tt = system_clock::to_time_t(now);
+        const auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
 
         std::ostringstream ss;
         ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %H:%M:%S")
