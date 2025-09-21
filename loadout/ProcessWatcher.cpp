@@ -1,7 +1,7 @@
 #include "ProcessWatcher.h"
+#include "Logger.h"
 
 namespace loadout {
-
     ProcessWatcher::~ProcessWatcher()
     {
         StopWatching();
@@ -15,6 +15,7 @@ namespace loadout {
     {
         other.current_state_ = PROCESS_STATE::PROCESS_NOT_RUNNING;
         other.should_watch_ = false;
+        LO_DEBUG("ProcessWatcher moved");
     }
 
     ProcessWatcher& ProcessWatcher::operator=(ProcessWatcher&& other) noexcept
@@ -22,14 +23,13 @@ namespace loadout {
         if (this != &other)
         {
             StopWatching();
-
             current_state_ = other.current_state_.load();
             should_watch_ = other.should_watch_.load();
             watcher_thread_ = std::move(other.watcher_thread_);
             process_name_ = std::move(other.process_name_);
-
             other.current_state_ = PROCESS_STATE::PROCESS_NOT_RUNNING;
             other.should_watch_ = false;
+            LO_DEBUG("ProcessWatcher move assigned");
         }
         return *this;
     }
@@ -38,13 +38,13 @@ namespace loadout {
     {
         if (process_name_.empty())
         {
-            std::cerr << "Process name not set." << std::endl;
+            LO_ERROR("Process name not set - cannot start watching");
             return;
         }
 
         if (should_watch_.load())
         {
-            std::cerr << "Already watching processes." << std::endl;
+            LO_WARN("Already watching processes - ignoring start request");
             return;
         }
 
@@ -53,29 +53,38 @@ namespace loadout {
         if (IsProcessRunning())
         {
             current_state_ = PROCESS_STATE::PROCESS_ALREADY_RUNNING;
+            LO_INFO("Process " + process_name_ + " was already running when monitoring started");
         }
 
         watcher_thread_ = std::make_unique<std::thread>(&ProcessWatcher::WatcherThread, this);
+        LO_INFO("Started monitoring process: " + process_name_);
     }
 
     void ProcessWatcher::StopWatching()
     {
-        should_watch_ = false;
+        if (should_watch_.load())
+        {
+            should_watch_ = false;
+            LO_INFO("Stopping monitoring for process: " + process_name_);
+        }
 
         if (watcher_thread_ && watcher_thread_->joinable())
         {
             watcher_thread_->join();
             watcher_thread_.reset();
+            LO_DEBUG("Watcher thread stopped and cleaned up");
         }
     }
 
     void ProcessWatcher::SetProcessName(const std::string& processName)
     {
-        process_name_ = processName;  // Simple assignment - no conversion needed
+        process_name_ = processName;
+        LO_DEBUG("Process name set to: " + processName);
     }
 
     void ProcessWatcher::WatcherThread()
     {
+        LO_DEBUG("Watcher thread started");
         bool wasRunning = (current_state_.load() == PROCESS_STATE::PROCESS_ALREADY_RUNNING);
 
         while (should_watch_.load())
@@ -86,25 +95,35 @@ namespace loadout {
             {
                 current_state_ = PROCESS_STATE::PROCESS_RUNNING;
                 wasRunning = true;
-                std::cout << process_name_ << " started." << std::endl;
+                LO_INFO("Process started: " + process_name_);
             }
             else if (!isRunning && wasRunning)
             {
                 current_state_ = PROCESS_STATE::PROCESS_NOT_RUNNING;
                 wasRunning = false;
-                std::cout << process_name_ << " stopped." << std::endl;
+                LO_INFO("Process stopped: " + process_name_);
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
+
+        LO_DEBUG("Watcher thread ending");
     }
 
     bool ProcessWatcher::IsProcessRunning() const
     {
-        if (process_name_.empty()) return false;
+        if (process_name_.empty())
+        {
+            LO_DEBUG("Process name is empty - returning false");
+            return false;
+        }
 
         HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-        if (hSnap == INVALID_HANDLE_VALUE) return false;
+        if (hSnap == INVALID_HANDLE_VALUE)
+        {
+            LO_ERROR("Failed to create process snapshot");
+            return false;
+        }
 
         // Simple RAII for handle cleanup
         struct HandleGuard
@@ -117,7 +136,11 @@ namespace loadout {
         PROCESSENTRY32 pe;
         pe.dwSize = sizeof(PROCESSENTRY32);
 
-        if (!Process32First(hSnap, &pe)) return false;
+        if (!Process32First(hSnap, &pe))
+        {
+            LO_ERROR("Failed to get first process from snapshot");
+            return false;
+        }
 
         do
         {

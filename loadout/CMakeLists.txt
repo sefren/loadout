@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-add_executable (loadout "main.cpp"  "ProcessWatcher.cpp" "ProcessWatcher.h")
+add_executable (loadout "main.cpp"  "ProcessWatcher.cpp" "ProcessWatcher.h" "Logger.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET loadout PROPERTY CXX_STANDARD 20)

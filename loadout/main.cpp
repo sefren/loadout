@@ -1,23 +1,28 @@
 ﻿#include "ProcessWatcher.h"
+#include "Logger.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
 
 int main()
 {
+
+	Logger::Instance().SetLogFile("process_watcher.log");
+
+    LO_INFO("ProcessWatcher application started");
+
     // Create a process watcher
     loadout::ProcessWatcher watcher;
 
+	std::string processName = "notepad.exe";
+
     // Set the process to watch
-    watcher.SetProcessName("notepad.exe");
+    watcher.SetProcessName(processName);
 
     // Start watching
     watcher.StartWatching();
 
-    std::cout << "Started monitoring notepad.exe..." << std::endl;
-    std::cout << "The watcher will automatically log when the process starts/stops." << std::endl;
-    std::cout << "Press Ctrl+C to exit." << std::endl;
-
+    // Keep the application running
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
