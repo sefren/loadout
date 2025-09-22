@@ -1,13 +1,20 @@
+// Events.h
 #pragma once
 #include "ProcessWatcher.h"
 
 namespace loadout {
 
+    /**
+     * Base interface for all events in the system
+     */
     class IEvent {
     public:
         virtual ~IEvent() = default;
     };
 
+    /**
+     * Event published when a monitored process changes state
+     */
     class ProcessEvent final : public IEvent {
     public:
         PROCESS_STATE state_;

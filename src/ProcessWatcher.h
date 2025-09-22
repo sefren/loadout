@@ -16,17 +16,17 @@ namespace loadout
         RUNNING,
     };
 
+    /**
+     * Watches a process and publishes start/stop events via EventBus
+     */
     class ProcessWatcher
     {
     public:
         ProcessWatcher() = default;
         ~ProcessWatcher();
 
-        // Delete copy constructor and assignment operator
         ProcessWatcher(const ProcessWatcher&) = delete;
         ProcessWatcher& operator=(const ProcessWatcher&) = delete;
-
-        // Move constructor and assignment operator
         ProcessWatcher(ProcessWatcher&& other) noexcept;
         ProcessWatcher& operator=(ProcessWatcher&& other) noexcept;
 
@@ -38,7 +38,7 @@ namespace loadout
 
     private:
         bool IsProcessRunning() const;
-        void WatcherThread();
+        void WatcherThread(); // Polls every 1000ms
         void PublishProcessEvent(PROCESS_STATE state);
 
         std::atomic<PROCESS_STATE> current_state_{ PROCESS_STATE::STOPPED };
