@@ -3,69 +3,54 @@
 ![status](https://img.shields.io/badge/status-alpha-orange)
 ![license](https://img.shields.io/badge/license-Apache%202.0-blue)
 
-**Loadout** is a lightweight Windows app that watches for specific programs running and automatically manages other apps based on user-defined rules.  
-It helps avoid manual closing or muting of background apps when launching important programs like games or heavy workloads.
+**Loadout** is a lightweight desktop session orchestrator for Windows. It watches for processes and runs user-defined actions like closing browsers when games launch or opening communication apps automatically.
+
+> Prototype stage, expect bugs and breaking changes.
 
 ---
 
-> **Prototype stage**, no builds yet.  
-> Expect bugs, missing features, and breaking changes.
+## Demo
 
+**Current prototype in action:**
 
----
+[![Loadout Demo](https://img.youtube.com/vi/r2Zaor9yPTA/0.jpg)](https://youtu.be/r2Zaor9yPTA)
 
-## Features Planned:
-
-- Detect when specific programs start or stop
-- Close, pause, or mute other apps based on user rules
-- Provide a GUI interface to create profiles
-
+> *When Valorant starts → automatically closes browsers + launches Discord & OBS*
 
 ---
 
-## Why Use Loadout?
+**Terminal Output Screenshot:**
 
-Saves time and effort by automating background app management when launching important programs.  
+![Terminal demo of Loadout prototype](demo/loadout-demo.png)
+
+> *Early prototype verifying Valorant launch, then executing automation commands.*
+
+
+
+
+## Features
+
+- Process monitoring and lifecycle detection
+- Automatic app management based on triggers
+- Command system for launching/closing applications *(for now)*
+- Event-driven architecture with logging
 
 ---
 
-## Requirements
+## Build
 
-- Windows 10/11
-- C++17 compatible compiler
-- CMake 3.20+
-- Ninja (optional, for faster builds)
+Requires Windows 10/11, CMake 3.20+, and C++17 compiler.
 
----
-
-## How to Build
-
-**Debug build:**
-```powershell
-cmake --preset default
-cmake --build --preset default
-````
-
-**Release build:**
-
-```powershell
-cmake --preset release
-cmake --build --preset release
+```bash
+cmake --preset default && cmake --build --preset default
 ```
 
-The executable will be located in:
+or 
 
+
+```bash
+cmake --preset release && cmake --build --preset release
 ```
-build/<preset>/bin/loadout.exe
-```
-
----
-
-## Current Status
-
-* Process monitoring works
-* Event system in place
-* Profile actions under development
 
 ---
 
