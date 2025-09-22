@@ -4,46 +4,34 @@
     {
       "name": "default",
       "displayName": "Debug Config",
-      "description": "Debug build using Ninja and MinGW",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_STANDARD": "17",
         "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       },
-      "environment": {
-        "CC": "gcc",
-        "CXX": "g++"
-      }
+      "environment": { "CC": "gcc", "CXX": "g++" }
     },
     {
       "name": "release",
       "displayName": "Release Config",
-      "description": "Release build using Ninja and MinGW",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_STANDARD": "17",
         "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       },
-      "environment": {
-        "CC": "gcc",
-        "CXX": "g++"
-      }
+      "environment": { "CC": "gcc", "CXX": "g++" }
     }
   ],
   "buildPresets": [
-    {
-      "name": "default",
-      "configurePreset": "default"
-    },
-    {
-      "name": "release",
-      "configurePreset": "release"
-    }
+    { "name": "default", "configurePreset": "default" },
+    { "name": "release", "configurePreset": "release" }
   ]
 }
